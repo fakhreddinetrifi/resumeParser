@@ -1,3 +1,6 @@
+import mimetypes
+import shutil
+
 from django.core.files import File
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
@@ -26,17 +29,17 @@ class FileView(APIView):
         name = request.query_params.get('name')
         path_to_file = MEDIA_ROOT + '/' + name
         f = open(path_to_file, 'rb')
-        file = File(f)
-        response = HttpResponse(file.read())
-        response['Content-Disposition'] = 'attachment'
+        # file = File(f)
+        mime_type, _ = mimetypes.guess_type(path_to_file)
+        response = HttpResponse(f, content_type=mime_type)
+        response['Content-Disposition'] = 'attachment; filename=%s' % name
         return response
 
     @api_view(['GET'])
-    def some(self):
-        some = ResumeParser()
-        return HttpResponse(some.some(1, 5))
+    def init(self):
+      shutil.rmtree(MEDIA_ROOT, ignore_errors=True)
+      json = {
+        'message': 'Media folder is deleted'
+      }
+      return HttpResponse(json, status=status.HTTP_200_OK)
 
-    @api_view(['GET'])
-    def somes(self):
-        some = ResumeParser()
-        return HttpResponse(some.some(1, 10))

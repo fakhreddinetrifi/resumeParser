@@ -9,6 +9,9 @@ export class ConnectionsService {
   BASE_URL = 'http://127.0.0.1:8000';
   constructor(private http: HttpClient) { }
 
+  init() {
+    return this.http.get(`${this.BASE_URL}/file/init`, {responseType: 'text'});
+  }
   upload(file: File): Observable<HttpEvent<any>> {
     const formData: FormData = new FormData();
 

@@ -1,4 +1,4 @@
-import {Component, ViewChild, ElementRef} from '@angular/core';
+import {Component, ViewChild, ElementRef, OnInit} from '@angular/core';
 import {ConnectionsService} from './Services/connections.service';
 import {HttpEventType, HttpResponse} from '@angular/common/http';
 
@@ -7,12 +7,17 @@ import {HttpEventType, HttpResponse} from '@angular/common/http';
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   @ViewChild('fileDropRef', {static: false}) fileDropEl: ElementRef;
   files: any[] = [];
   showSpinner = false;
+  showButton = false;
 
   constructor(private connectionService: ConnectionsService) {
+  }
+
+  ngOnInit() {
+    this.connectionService.init().subscribe();
   }
 
   /**
@@ -45,26 +50,22 @@ export class AppComponent {
    * Simulate the upload process
    */
   uploadFilesSimulator(index: number, files = null) {
-    if (files !== null) {
-      console.log(files);
-      this.showSpinner = true;
-      this.connectionService.upload(files[files.length - 1]).subscribe(
-        (event: any) => {
-          if (event.type === HttpEventType.UploadProgress) {
-            if (files[files.length - 1].progress === 100) {
-              this.uploadFilesSimulator(index + 1);
-            } else {
-              files[files.length - 1].progress = Math.round(100 * event.loaded / event.total);
-            }
-          } else if (event instanceof HttpResponse) {
-            console.log(event);
+    console.log(index)
+    this.connectionService.upload(this.files[index]).subscribe(
+      (event: any) => {
+        if (event.type === HttpEventType.UploadProgress) {
+          this.files[index].progress = Math.round(100 * event.loaded / event.total);
+          if (this.files[index].progress === 100 && index < this.files.length - 1) {
+            this.uploadFilesSimulator(index + 1);
           }
-        },
-        (err: any) => {
-          console.log(err);
+        } else if (event instanceof HttpResponse) {
+          console.log(event);
         }
-      );
-    }
+      },
+      (err: any) => {
+        console.log(err);
+      }
+    );
   }
 
   /**
@@ -77,7 +78,8 @@ export class AppComponent {
       this.files.push(item);
     }
     this.fileDropEl.nativeElement.value = '';
-    this.uploadFilesSimulator(0, this.files);
+    this.showButton = true;
+    // this.uploadFilesSimulator(0, this.files);
   }
 
   /**
@@ -94,5 +96,9 @@ export class AppComponent {
     const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+  }
+
+  uploadFiles() {
+    this.uploadFilesSimulator(0);
   }
 }
